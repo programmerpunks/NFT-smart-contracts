@@ -19,10 +19,10 @@ contract simpleNFT is ERC721Enumerable, Ownable {
     string public baseExtension = ".json";
 
     uint256 public maxMintAmount = 3;
-    uint256 public maxSupply = 10;
+    uint256 public maxSupply = 10; //total
     uint256 public cost = 0.01 ether;
 
-    bool public paused = false;
+    bool public mintState = false;
 
     constructor(
         string memory name_,
@@ -33,14 +33,15 @@ contract simpleNFT is ERC721Enumerable, Ownable {
     }
 
     // internal functions
+    //remove
     function _baseURI() internal view virtual override returns (string memory) {
         return baseURI;
     }
 
     // public functions
-    function mint(uint256 _mintAmount) public payable {
+    function mint(uint256 _mintAmount) external payable {
         uint256 supply = totalSupply();
-        require(!paused, "Minting is paused");
+        require(mintState, "Minting is paused");
 
         require(_mintAmount > 0, "Mint amount Cannot be zero");
         require(
@@ -48,22 +49,23 @@ contract simpleNFT is ERC721Enumerable, Ownable {
             "Cannot mint more than max mint amount"
         );
         require(
-            balanceOf(msg.sender) < maxMintAmount,
-            "You have already minted max NFTs"
+            balanceOf(msg.sender) + _mintAmount <= maxMintAmount,
+            "You cannot mint more than max NFTs"
         );
         require(
             supply + _mintAmount <= maxSupply,
             "Cannot mint more than max Supply"
         );
 
-        if (msg.sender != owner()) {
-            require(msg.value >= cost * _mintAmount, "Cost Error");
-        }
+        // if (msg.sender != owner()) {
+        // }
+        require(msg.value >= cost * _mintAmount, "Cost Error");
         for (uint256 i = 1; i <= _mintAmount; i++) {
             _mint(msg.sender, supply + i);
         }
     }
 
+    // remove & Base URi
     function tokenURI(uint256 tokenId)
         public
         view
@@ -89,8 +91,8 @@ contract simpleNFT is ERC721Enumerable, Ownable {
                 : "";
     }
 
-    function walletOfOwner(address _owner)
-        public
+    function nftsOnwedByWallet(address _owner)
+        external
         view
         returns (uint256[] memory)
     {
@@ -122,8 +124,8 @@ contract simpleNFT is ERC721Enumerable, Ownable {
         baseExtension = _newBaseExtension;
     }
 
-    function pause(bool _state) public onlyOwner {
-        paused = _state;
+    function setMintState(bool _state) public onlyOwner {
+        mintState = _state;
     }
 
     function withdraw() public payable onlyOwner {

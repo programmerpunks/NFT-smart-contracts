@@ -17,6 +17,8 @@ describe("Simple NFT sol", function () {
     const SimpleNFT = await ethers.getContractFactory("simpleNFT");
     const simpleNFT = await SimpleNFT.deploy("Test", "test", "ipfs://URI/");
 
+    await simpleNFT.setMintState(true);
+
     return { simpleNFT, owner, account1, account2, account3 };
   }
 
@@ -40,9 +42,9 @@ describe("Simple NFT sol", function () {
         const { simpleNFT, owner, account1 } = await loadFixture(
           deployContract
         );
-        await simpleNFT.pause(true);
-        const paused = await simpleNFT.paused();
-        console.log("paused value:", paused);
+        await simpleNFT.setMintState(false);
+        const mintState = await simpleNFT.mintState();
+        console.log("MintState value:", mintState);
         await expect(simpleNFT.connect(account1).mint(1)).to.be.revertedWith(
           "Minting is paused"
         );
@@ -54,7 +56,7 @@ describe("Simple NFT sol", function () {
         );
 
         await expect(
-          simpleNFT.connect(account1).pause(true)
+          simpleNFT.connect(account1).setMintState(false)
         ).to.be.revertedWith("Ownable: caller is not the owner");
       });
 
@@ -84,7 +86,7 @@ describe("Simple NFT sol", function () {
           simpleNFT.connect(account1).mint(1, {
             value: ethers.utils.parseEther("0.01"),
           })
-        ).to.be.revertedWith("You have already minted max NFTs");
+        ).to.be.revertedWith("You cannot mint more than max NFTs");
       });
 
       it("Should revert with the error if mint more than max Supply Boundry", async function () {
@@ -215,7 +217,7 @@ describe("Simple NFT sol", function () {
       });
     });
 
-    describe("Testing Token Ids with walletOfOwner function", function () {
+    describe("Testing Token Ids with nftsOnwedByWallet function", function () {
       it("Should revert with the if Wrong Token id", async function () {
         const { simpleNFT, owner, account1, account2, account3 } =
           await loadFixture(deployContract);
@@ -225,7 +227,7 @@ describe("Simple NFT sol", function () {
 
         const ownerTokens = await simpleNFT
           .connect(owner)
-          .walletOfOwner(owner.address);
+          .nftsOnwedByWallet(owner.address);
 
         console.log("MY tokens: ", [
           ethers.BigNumber.from("1"),
@@ -245,7 +247,7 @@ describe("Simple NFT sol", function () {
 
         const account1Tokens = await simpleNFT
           .connect(account1)
-          .walletOfOwner(account1.address);
+          .nftsOnwedByWallet(account1.address);
 
         console.log("account1Tokens: ", account1Tokens);
         await simpleNFT.connect(account2).mint(3, {
@@ -254,7 +256,7 @@ describe("Simple NFT sol", function () {
 
         const account2Tokens = await simpleNFT
           .connect(account2)
-          .walletOfOwner(account2.address);
+          .nftsOnwedByWallet(account2.address);
 
         console.log("account1Tokens: ", account2Tokens);
 
@@ -264,7 +266,7 @@ describe("Simple NFT sol", function () {
 
         const account3Tokens = await simpleNFT
           .connect(account3)
-          .walletOfOwner(account3.address);
+          .nftsOnwedByWallet(account3.address);
 
         console.log("account1Tokens: ", account3Tokens);
 
