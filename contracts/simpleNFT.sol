@@ -73,7 +73,6 @@ contract simpleNFT is ERC721Enumerable, Ownable {
             _exists(tokenId),
             "ERC721Metadata: URI query for nonexistent token"
         );
-        // Only Owner Functions
         string memory currentBaseURI = _baseURI();
         return
             bytes(currentBaseURI).length > 0
