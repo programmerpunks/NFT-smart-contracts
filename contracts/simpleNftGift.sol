@@ -4,7 +4,7 @@
     2. And a wallet can have only 3 nfts
     3. And in one transaction they can mint 3 nfts
     4. And these should be dynamic, owner can change after that
-    5. And owner can mint 10 nfts for its
+    5. And owner can mint 10 nfts as guest for its team members
 */
 
 // SPDX-License-Identifier: MIT
@@ -79,11 +79,11 @@ contract simpleNFTGift is ERC721Enumerable, Ownable {
             "Cannot mint more than max mint amount"
         );
         require(
-            balanceOf(msg.sender) + _mintAmount <= maxMintAmount,
-            "You cannot mint more than max NFTs"
+            balanceOf(receiver) + _mintAmount <= maxMintAmount,
+            "You cannot mint more than max NFTs for this wallet"
         );
         require(
-            supply + _mintAmount + teamSupply <= maxSupply,
+            supply + _mintAmount <= maxSupply,
             "Cannot mint more than max Supply"
         );
 

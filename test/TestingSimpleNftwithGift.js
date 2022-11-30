@@ -12,14 +12,33 @@ describe("Simple NFT with gift functionality", function () {
   // and reset Hardhat Network to that snapshot in every test.
   async function deployContract() {
     // Contracts are deployed using the first signer/account by default
-    const [owner, account1, account2, account3] = await ethers.getSigners();
+    const [
+      owner,
+      account1,
+      account2,
+      account3,
+      account4,
+      account5,
+      account6,
+      account7,
+    ] = await ethers.getSigners();
 
     const SimpleNFT = await ethers.getContractFactory("simpleNFTGift");
     const simpleNFT = await SimpleNFT.deploy("Test", "test", "ipfs://URI/");
 
     await simpleNFT.setMintState(true);
 
-    return { simpleNFT, owner, account1, account2, account3 };
+    return {
+      simpleNFT,
+      owner,
+      account1,
+      account2,
+      account3,
+      account4,
+      account5,
+      account6,
+      account7,
+    };
   }
 
   describe("Deployment", function () {
@@ -50,13 +69,15 @@ describe("Simple NFT with gift functionality", function () {
         );
       });
 
-      it("Should revert with the error if a account that is NOT owner tries to pause", async function () {
-        const { simpleNFT, owner, account1 } = await loadFixture(
+      it("Should revert with the error if a account that is NOT owner tries to gift", async function () {
+        const { simpleNFT, owner, account1, account3 } = await loadFixture(
           deployContract
         );
 
         await expect(
-          simpleNFT.connect(account1).setMintState(false)
+          simpleNFT.connect(account1).gift(3, account3.address, {
+            value: ethers.utils.parseEther("0.03"),
+          })
         ).to.be.revertedWith("Ownable: caller is not the owner");
       });
 
@@ -89,9 +110,18 @@ describe("Simple NFT with gift functionality", function () {
         ).to.be.revertedWith("You cannot mint more than max NFTs");
       });
 
-      it("Should revert with the error if mint more than max Supply Boundry", async function () {
-        const { simpleNFT, owner, account1, account2, account3 } =
-          await loadFixture(deployContract);
+      it("Should revert with the error if mint more than max Supply Boundry for user", async function () {
+        const {
+          simpleNFT,
+          owner,
+          account1,
+          account2,
+          account3,
+          account4,
+          account5,
+          account6,
+          account7,
+        } = await loadFixture(deployContract);
 
         await simpleNFT.connect(owner).mint(3, {
           value: ethers.utils.parseEther("0.03"),
@@ -103,12 +133,63 @@ describe("Simple NFT with gift functionality", function () {
         await simpleNFT.connect(account2).mint(3, {
           value: ethers.utils.parseEther("0.03"),
         });
-        //TODO: FIX THIS LATER
-        // await expect(
-        //   simpleNFT.connect(account3).mint(2, {
-        //     value: ethers.utils.parseEther("0.02"),
-        //   })
-        // ).to.be.revertedWith("Cannot mint more than max Supply");
+        // mint 9
+        await expect(
+          simpleNFT.connect(account3).mint(2, {
+            value: ethers.utils.parseEther("0.02"),
+          })
+        ).to.be.revertedWith("Cannot mint more than max Supply");
+
+        await simpleNFT.connect(owner).gift(1, account3.address, {
+          value: ethers.utils.parseEther("0.01"),
+        });
+
+        await simpleNFT.connect(owner).gift(2, account3.address, {
+          value: ethers.utils.parseEther("0.02"),
+        });
+        // mint 9 gift 3
+        await expect(
+          simpleNFT.connect(owner).gift(1, account3.address, {
+            value: ethers.utils.parseEther("0.01"),
+          })
+        ).to.be.revertedWith(
+          "You cannot mint more than max NFTs for this wallet"
+        );
+
+        await simpleNFT.connect(owner).gift(3, account4.address, {
+          value: ethers.utils.parseEther("0.03"),
+        });
+        // mint 9 gift 6
+        await expect(
+          simpleNFT.connect(owner).gift(1, account4.address, {
+            value: ethers.utils.parseEther("0.01"),
+          })
+        ).to.be.revertedWith(
+          "You cannot mint more than max NFTs for this wallet"
+        );
+        await simpleNFT.connect(owner).gift(3, account5.address, {
+          value: ethers.utils.parseEther("0.03"),
+        });
+        // mint 9 gift 9
+        await expect(
+          simpleNFT.connect(owner).gift(3, account6.address, {
+            value: ethers.utils.parseEther("0.03"),
+          })
+        ).to.be.revertedWith("Cannot mint this amount as gift");
+
+        await simpleNFT.connect(owner).gift(1, account6.address, {
+          value: ethers.utils.parseEther("0.01"),
+        });
+        // mint 9 gift 10
+        await simpleNFT.connect(account6).mint(1, {
+          value: ethers.utils.parseEther("0.01"),
+        });
+        // mint 10 gift 10
+        await expect(
+          simpleNFT.connect(account7).mint(1, {
+            value: ethers.utils.parseEther("0.01"),
+          })
+        ).to.be.revertedWith("Cannot mint more than max Supply");
       });
 
       it("Should revert with the error if cost is not equal to set cost ", async function () {
