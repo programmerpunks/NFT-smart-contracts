@@ -57,8 +57,6 @@ contract simpleNFT is ERC721Enumerable, Ownable {
             "Cannot mint more than max Supply"
         );
 
-        // if (msg.sender != owner()) {
-        // }
         require(msg.value >= cost * _mintAmount, "Cost Error");
         for (uint256 i = 1; i <= _mintAmount; i++) {
             _mint(msg.sender, supply + i);
