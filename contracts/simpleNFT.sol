@@ -19,7 +19,7 @@ contract simpleNFT is ERC721Enumerable, Ownable {
     string public baseExtension = ".json";
 
     uint256 public maxMintAmount = 3;
-    uint256 public maxSupply = 10; //total
+    uint256 public maxSupply = 10; //total Mintables Supply
     uint256 public cost = 0.01 ether;
 
     bool public mintState = false;
@@ -29,16 +29,15 @@ contract simpleNFT is ERC721Enumerable, Ownable {
         string memory symbol_,
         string memory _initBaseURI
     ) ERC721(name_, symbol_) {
-        setBaseURI(_initBaseURI);
+        baseURI = _initBaseURI;
     }
 
     // internal functions
-    //remove
     function _baseURI() internal view virtual override returns (string memory) {
         return baseURI;
     }
 
-    // public functions
+    // external functions
     function mint(uint256 _mintAmount) external payable {
         uint256 supply = totalSupply();
         require(mintState, "Minting is paused");
@@ -63,7 +62,6 @@ contract simpleNFT is ERC721Enumerable, Ownable {
         }
     }
 
-    // remove & Base URi
     function tokenURI(uint256 tokenId)
         public
         view
@@ -103,30 +101,30 @@ contract simpleNFT is ERC721Enumerable, Ownable {
     }
 
     //only owner
-    function setCost(uint256 _newCost) public onlyOwner {
+    function setCost(uint256 _newCost) external onlyOwner {
         cost = _newCost;
     }
 
-    function setmaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner {
+    function setmaxMintAmount(uint256 _newmaxMintAmount) external onlyOwner {
         maxMintAmount = _newmaxMintAmount;
     }
 
-    function setBaseURI(string memory _newBaseURI) public onlyOwner {
+    function setBaseURI(string memory _newBaseURI) external onlyOwner {
         baseURI = _newBaseURI;
     }
 
     function setBaseExtension(string memory _newBaseExtension)
-        public
+        external
         onlyOwner
     {
         baseExtension = _newBaseExtension;
     }
 
-    function setMintState(bool _state) public onlyOwner {
+    function setMintState(bool _state) external onlyOwner {
         mintState = _state;
     }
 
-    function withdraw() public payable onlyOwner {
+    function withdraw() external payable onlyOwner {
         require(address(this).balance > 0, "Balance of this Contract is Zero");
         (bool transfer, ) = payable(owner()).call{value: address(this).balance}(
             ""
