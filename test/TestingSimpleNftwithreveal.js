@@ -376,6 +376,22 @@ describe("Simple NFT with gift functionality", function () {
       });
     });
 
+    describe("Testing of Reveal Functionality", function () {
+      it("validation of OnlyOwner", async function () {
+        const { simpleNFT, owner, account1, account2, account3 } =
+          await loadFixture(deployContract);
+        await expect(
+          simpleNFT.connect(account2).setCost(ethers.utils.parseEther("1"))
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+      it("Should revert with the if cost is not set", async function () {
+        const { simpleNFT, owner, account1, account2, account3 } =
+          await loadFixture(deployContract);
+
+        await simpleNFT.connect(owner).setCost(ethers.utils.parseEther("1"));
+        expect(await simpleNFT.cost()).to.equal(ethers.utils.parseEther("1"));
+      });
+    });
     describe("Testing of setmaxMintAmount function", function () {
       it("validation of OnlyOwner", async function () {
         const { simpleNFT, owner, account1, account2, account3 } =

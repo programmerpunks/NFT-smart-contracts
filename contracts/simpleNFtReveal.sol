@@ -23,6 +23,7 @@ contract simpleNFTReveal is ERC721Enumerable, Ownable {
     uint256 public cost = 0.01 ether;
 
     bool public mintState = false;
+    
 
     constructor(
         string memory name_,
