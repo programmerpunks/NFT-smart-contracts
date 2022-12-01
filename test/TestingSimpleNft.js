@@ -329,6 +329,19 @@ describe("Simple NFT sol", function () {
         ).to.be.revertedWith("Ownable: caller is not the owner");
       });
 
+      it("Returns error if setBaseURI is not set correctly", async function () {
+        const { simpleNFT, owner, account1, account2, account3 } =
+          await loadFixture(deployContract);
+        await simpleNFT.connect(owner).setBaseURI("ipfs://setBaseURI/");
+        await simpleNFT.mint(1, { value: ethers.utils.parseEther("0.01") });
+        expect(await simpleNFT.tokenURI(1)).to.equal(
+          "ipfs://setBaseURI/1.json"
+        );
+
+        await expect(
+          simpleNFT.connect(account2).setBaseExtension("ipfs://none")
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
       it("Error if setBaseExtension is not set", async function () {
         const { simpleNFT, owner, account1, account2, account3 } =
           await loadFixture(deployContract);
