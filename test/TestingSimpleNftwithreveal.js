@@ -23,10 +23,16 @@ describe("Simple NFT with gift functionality", function () {
       account7,
     ] = await ethers.getSigners();
 
-    const SimpleNFT = await ethers.getContractFactory("simpleNFTGift");
-    const simpleNFT = await SimpleNFT.deploy("Test", "test", "ipfs://URI/");
+    const SimpleNFT = await ethers.getContractFactory("simpleNFTReveal");
+    const simpleNFT = await SimpleNFT.deploy(
+      "Test",
+      "test",
+      "ipfs://URI/",
+      "ipfs://notRevealedUri/"
+    );
 
     await simpleNFT.setMintState(true);
+    await simpleNFT.reveal();
 
     return {
       simpleNFT,

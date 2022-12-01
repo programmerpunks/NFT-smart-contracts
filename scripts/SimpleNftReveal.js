@@ -4,7 +4,12 @@ async function main() {
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
   const NFT = await ethers.getContractFactory("simpleNFTReveal");
-  const nft = await NFT.deploy("Test", "test", "ipfs://URI/");
+  const nft = await NFT.deploy(
+    "Test",
+    "test",
+    "ipfs://URI/",
+    "ipfs://notRevealedUri"
+  );
   console.log(`simpleNFTGift Contract address: ${nft.address}`);
 }
 main()
