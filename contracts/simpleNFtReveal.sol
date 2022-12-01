@@ -23,14 +23,18 @@ contract simpleNFTReveal is ERC721Enumerable, Ownable {
     uint256 public cost = 0.01 ether;
 
     bool public mintState = false;
-    
+
+    bool public revealed = false;
+    string public notRevealedUri;
 
     constructor(
         string memory name_,
         string memory symbol_,
-        string memory _initBaseURI
+        string memory _initBaseURI,
+        string memory _initNotRevealedUri
     ) ERC721(name_, symbol_) {
         baseURI = _initBaseURI;
+        notRevealedUri = _initNotRevealedUri;
     }
 
     // internal functions
@@ -74,6 +78,11 @@ contract simpleNFTReveal is ERC721Enumerable, Ownable {
             _exists(tokenId),
             "ERC721Metadata: URI query for nonexistent token"
         );
+
+        if (revealed == false) {
+            return notRevealedUri;
+        }
+
         string memory currentBaseURI = _baseURI();
         return
             bytes(currentBaseURI).length > 0
@@ -101,6 +110,15 @@ contract simpleNFTReveal is ERC721Enumerable, Ownable {
     }
 
     //only owner
+
+    function reveal() public onlyOwner {
+        revealed = true;
+    }
+
+    function setNotRevealedURI(string memory _notRevealedURI) public onlyOwner {
+        notRevealedUri = _notRevealedURI;
+    }
+
     function setCost(uint256 _newCost) external onlyOwner {
         cost = _newCost;
     }
