@@ -13,7 +13,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract simpleNFTGift is ERC721Enumerable, Ownable {
+contract simpleNFTReveal is ERC721Enumerable, Ownable {
     using Strings for uint256;
 
     string baseURI;
@@ -25,13 +25,17 @@ contract simpleNFTGift is ERC721Enumerable, Ownable {
     uint256 public teamSupply = 10;
 
     bool public mintState = false;
+    bool public revealed = false;
+    string public notRevealedUri;
 
     constructor(
         string memory name_,
         string memory symbol_,
-        string memory _initBaseURI
+        string memory _initBaseURI,
+        string memory _initNotRevealedUri
     ) ERC721(name_, symbol_) {
-        setBaseURI(_initBaseURI);
+        baseURI = _initBaseURI;
+        notRevealedUri = _initNotRevealedUri;
     }
 
     // internal functions
@@ -39,7 +43,7 @@ contract simpleNFTGift is ERC721Enumerable, Ownable {
         return baseURI;
     }
 
-    // public functions
+    // external functions
     function mint(uint256 _mintAmount) external payable {
         uint256 supply = totalSupply();
         require(mintState, "Minting is paused");
@@ -94,6 +98,8 @@ contract simpleNFTGift is ERC721Enumerable, Ownable {
         }
     }
 
+    // public functions
+
     function tokenURI(uint256 tokenId)
         public
         view
@@ -105,6 +111,10 @@ contract simpleNFTGift is ERC721Enumerable, Ownable {
             _exists(tokenId),
             "ERC721Metadata: URI query for nonexistent token"
         );
+        if (revealed == false) {
+            return notRevealedUri;
+        }
+
         // Only Owner Functions
         string memory currentBaseURI = _baseURI();
         return
@@ -133,30 +143,42 @@ contract simpleNFTGift is ERC721Enumerable, Ownable {
     }
 
     //only owner
-    function setCost(uint256 _newCost) public onlyOwner {
+
+    function reveal() external onlyOwner {
+        revealed = true;
+    }
+
+    function setNotRevealedURI(string memory _notRevealedURI)
+        external
+        onlyOwner
+    {
+        notRevealedUri = _notRevealedURI;
+    }
+
+    function setCost(uint256 _newCost) external onlyOwner {
         cost = _newCost;
     }
 
-    function setmaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner {
+    function setmaxMintAmount(uint256 _newmaxMintAmount) external onlyOwner {
         maxMintAmount = _newmaxMintAmount;
     }
 
-    function setBaseURI(string memory _newBaseURI) public onlyOwner {
+    function setBaseURI(string memory _newBaseURI) external onlyOwner {
         baseURI = _newBaseURI;
     }
 
     function setBaseExtension(string memory _newBaseExtension)
-        public
+        external
         onlyOwner
     {
         baseExtension = _newBaseExtension;
     }
 
-    function setMintState(bool _state) public onlyOwner {
+    function setMintState(bool _state) external onlyOwner {
         mintState = _state;
     }
 
-    function withdraw() public payable onlyOwner {
+    function withdraw() external payable onlyOwner {
         require(address(this).balance > 0, "Balance of this Contract is Zero");
         (bool transfer, ) = payable(owner()).call{value: address(this).balance}(
             ""

@@ -6,7 +6,7 @@ const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("Simple NFT with gift functionality", function () {
+describe("Simple NFT with Reveal functionality", function () {
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
@@ -32,7 +32,6 @@ describe("Simple NFT with gift functionality", function () {
     );
 
     await simpleNFT.setMintState(true);
-    await simpleNFT.reveal();
 
     return {
       simpleNFT,
@@ -84,6 +83,16 @@ describe("Simple NFT with gift functionality", function () {
           simpleNFT.connect(account1).gift(3, account3.address, {
             value: ethers.utils.parseEther("0.03"),
           })
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+      it("Should revert with the error if a account that is NOT owner setMintState", async function () {
+        const { simpleNFT, owner, account1, account3 } = await loadFixture(
+          deployContract
+        );
+
+        await expect(
+          simpleNFT.connect(account1).setMintState(false)
         ).to.be.revertedWith("Ownable: caller is not the owner");
       });
 
@@ -291,6 +300,77 @@ describe("Simple NFT with gift functionality", function () {
           simpleNFT.connect(account1).tokenURI(1)
         ).to.be.revertedWith("ERC721Metadata: URI query for nonexistent token");
       });
+      // it("Should revert with the URI is not Correct", async function () {
+      //   const { simpleNFT, owner, account1, account2, account3 } =
+      //     await loadFixture(deployContract);
+      //   await simpleNFT.connect(owner).mint(3, {
+      //     value: ethers.utils.parseEther("0.03"),
+      //   });
+      //   const tokenurii = await simpleNFT.tokenURI(1);
+      //   console.log("tokenurii", tokenurii);
+
+      //   expect(await simpleNFT.tokenURI(1)).to.equal("ipfs://notRevealedUri/");
+
+      //   await simpleNFT.reveal();
+      //   expect(await simpleNFT.tokenURI(1)).to.equal("ipfs://URI/1.json");
+      //   expect(await simpleNFT.tokenURI(2)).to.equal("ipfs://URI/2.json");
+      // });
+      // TODO: OWNER SET Owner & set BaseURi
+
+      it("Should revert when non onwer tries to reveal", async function () {
+        const { simpleNFT, owner, account1, account2, account3 } =
+          await loadFixture(deployContract);
+        await expect(simpleNFT.connect(account1).reveal()).to.be.revertedWith(
+          "Ownable: caller is not the owner"
+        );
+      });
+      it("Should revert when non owner tries setBaseURI ", async function () {
+        const { simpleNFT, owner, account1, account2, account3 } =
+          await loadFixture(deployContract);
+        await expect(
+          simpleNFT.connect(account1).setBaseURI("ipfs://baseUR/")
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+      it("Should revert if setBaseURI is not set:", async function () {
+        const { simpleNFT, owner, account1, account2, account3 } =
+          await loadFixture(deployContract);
+        await simpleNFT.connect(owner).setBaseURI("ipfs://baseURI/");
+
+        await simpleNFT.gift(1, account1.address, {
+          value: ethers.utils.parseEther("0.01"),
+        });
+        await simpleNFT.reveal();
+        expect(await simpleNFT.tokenURI(1)).to.equal("ipfs://baseURI/1.json");
+      });
+
+      it("Should revert if setNotRevealedURI is called by non owner:", async function () {
+        const { simpleNFT, owner, account1, account2, account3 } =
+          await loadFixture(deployContract);
+        await expect(
+          simpleNFT.connect(account1).setNotRevealedURI("ipfs://baseURI/")
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+      it("Should revert if setNotRevealedURI is called by non owner:", async function () {
+        const { simpleNFT, owner, account1, account2, account3 } =
+          await loadFixture(deployContract);
+        await expect(
+          simpleNFT.connect(account1).setNotRevealedURI("ipfs://baseURI/")
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+      it("Should revert if setNotRevealedURI is called by non owner:", async function () {
+        const { simpleNFT, owner, account1, account2, account3 } =
+          await loadFixture(deployContract);
+        await simpleNFT
+          .connect(owner)
+          .setNotRevealedURI("ipfs://setNotRevealedURItest/");
+        expect(await simpleNFT.notRevealedUri()).to.equal(
+          "ipfs://setNotRevealedURItest/"
+        );
+      });
+
       it("Should revert with the URI is not Correct", async function () {
         const { simpleNFT, owner, account1, account2, account3 } =
           await loadFixture(deployContract);
@@ -300,7 +380,11 @@ describe("Simple NFT with gift functionality", function () {
         const tokenurii = await simpleNFT.tokenURI(1);
         console.log("tokenurii", tokenurii);
 
+        expect(await simpleNFT.tokenURI(1)).to.equal("ipfs://notRevealedUri/");
+
+        await simpleNFT.reveal();
         expect(await simpleNFT.tokenURI(1)).to.equal("ipfs://URI/1.json");
+        expect(await simpleNFT.tokenURI(2)).to.equal("ipfs://URI/2.json");
       });
     });
 
@@ -345,7 +429,7 @@ describe("Simple NFT with gift functionality", function () {
           .connect(account2)
           .nftsOnwedByWallet(account2.address);
 
-        console.log("account1Tokens: ", account2Tokens);
+        console.log("account2Tokens: ", account2Tokens);
 
         await simpleNFT.connect(account3).mint(1, {
           value: ethers.utils.parseEther("0.01"),
@@ -355,13 +439,12 @@ describe("Simple NFT with gift functionality", function () {
           .connect(account3)
           .nftsOnwedByWallet(account3.address);
 
-        console.log("account1Tokens: ", account3Tokens);
-        // TODO: fix this lateron
-        // await expect(
-        //   simpleNFT.connect(account3).mint(2, {
-        //     value: ethers.utils.parseEther("0.02"),
-        //   })
-        // ).to.be.revertedWith("Cannot mint more than max Supply");
+        console.log("account3Tokens: ", account3Tokens);
+        await expect(
+          simpleNFT.connect(account3).mint(2, {
+            value: ethers.utils.parseEther("0.02"),
+          })
+        ).to.be.revertedWith("Cannot mint more than max Supply");
       });
     });
 
