@@ -421,4 +421,116 @@ describe("Simple NFT with gift functionality", function () {
       });
     });
   });
+  describe("Testing of gift function ", function () {
+    it("Validation", async function () {
+      const { simpleNFT, owner, account1, account2, account3, account4 } =
+        await loadFixture(deployContract);
+
+      await expect(
+        simpleNFT.connect(account1).gift(3, account3.address, {
+          value: ethers.utils.parseEther("0.03"),
+        })
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+      await simpleNFT.setMintState(false);
+      await expect(
+        simpleNFT.gift(3, account3.address, {
+          value: ethers.utils.parseEther("0.03"),
+        })
+      ).to.be.revertedWith("Minting is paused");
+    });
+    it("Should revert error when all gift are dispatched", async () => {
+      //All Gift are dispatched
+      const { simpleNFT, owner, account1, account2, account3, account4 } =
+        await loadFixture(deployContract);
+
+      await simpleNFT.gift(3, account1.address, {
+        value: ethers.utils.parseEther("0.03"),
+      });
+      await simpleNFT.gift(3, account2.address, {
+        value: ethers.utils.parseEther("0.03"),
+      });
+      await simpleNFT.gift(3, account3.address, {
+        value: ethers.utils.parseEther("0.03"),
+      });
+
+      await simpleNFT.gift(1, account4.address, {
+        value: ethers.utils.parseEther("0.01"),
+      });
+      await expect(
+        simpleNFT.gift(3, account4.address, {
+          value: ethers.utils.parseEther("0.03"),
+        })
+      ).to.be.revertedWith("All Gift are dispatched");
+    });
+    it("Gift amount should be greater than zero", async () => {
+      const { simpleNFT, owner, account1, account2, account3, account4 } =
+        await loadFixture(deployContract);
+      await expect(
+        simpleNFT.gift(0, account4.address, {
+          value: ethers.utils.parseEther("0.01"),
+        })
+      ).to.be.revertedWith("Mint amount Cannot be zero");
+    });
+    it("Gift amount should be greater than maxMintamount", async () => {
+      const { simpleNFT, owner, account1, account2, account3, account4 } =
+        await loadFixture(deployContract);
+      await expect(
+        simpleNFT.gift(4, account4.address, {
+          value: ethers.utils.parseEther("0.01"),
+        })
+      ).to.be.revertedWith("Cannot mint more than max mint amount");
+    });
+    it("Gift amount cost Error", async () => {
+      const { simpleNFT, owner, account1, account2, account3, account4 } =
+        await loadFixture(deployContract);
+      await expect(
+        simpleNFT.gift(1, account4.address, {
+          value: ethers.utils.parseEther("0.009"),
+        })
+      ).to.be.revertedWith("Cost Error");
+    });
+    it("Gift:Cannot mint more than max Supply", async () => {
+      const {
+        simpleNFT,
+        owner,
+        account1,
+        account2,
+        account3,
+        account4,
+        account5,
+        account6,
+        account7,
+      } = await loadFixture(deployContract);
+
+      await simpleNFT.gift(3, account4.address, {
+        value: ethers.utils.parseEther("0.03"),
+      });
+      await simpleNFT.gift(3, account5.address, {
+        value: ethers.utils.parseEther("0.03"),
+      });
+      await simpleNFT.gift(2, account6.address, {
+        value: ethers.utils.parseEther("0.02"),
+      });
+      //mint 0 gift 9
+      await simpleNFT.mint(3, {
+        value: ethers.utils.parseEther("0.03"),
+      });
+      await simpleNFT.connect(account1).mint(3, {
+        value: ethers.utils.parseEther("0.03"),
+      });
+      await simpleNFT.connect(account2).mint(3, {
+        value: ethers.utils.parseEther("0.03"),
+      });
+      simpleNFT.connect(account3).mint(1, {
+        value: ethers.utils.parseEther("0.01"),
+      });
+
+      // mint 10, gift 8
+      await expect(
+        simpleNFT.gift(3, account7.address, {
+          value: ethers.utils.parseEther("0.03"),
+        })
+      ).to.be.revertedWith("Cannot mint this amount as gift");
+    });
+  });
 });
