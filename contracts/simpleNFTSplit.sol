@@ -29,14 +29,48 @@ contract simpleNFTSplit is ERC721Enumerable, Ownable {
     bool public revealed = false;
     string public notRevealedUri;
 
+    // Partner to Percentage
+    // mapping(address => uint256) partner;
+    uint256[] percentages;
+    address[] partners;
+
     constructor(
         string memory name_,
         string memory symbol_,
         string memory _initBaseURI,
-        string memory _initNotRevealedUri
+        string memory _initNotRevealedUri,
+        address[] memory _partner,
+        uint256[] memory _percentages
     ) ERC721(name_, symbol_) {
         baseURI = _initBaseURI;
         notRevealedUri = _initNotRevealedUri;
+        require(
+            _partner.length == _percentages.length,
+            "Accounts and percentages length mismatch"
+        );
+        require(_partner.length >= 5, "partner must be at least 5");
+        uint256 totalPercentage = 0;
+
+        //  (_partner.length);
+        // (_percentages.length);
+
+        for (uint256 i = 0; i < _partner.length; i++) {
+            // assert(_percentages[i] > 0);
+            // assert(_partner[i] != address(0));
+            require(
+                _percentages[i] > 0,
+                "percentage cannot be zero for each partner"
+            );
+            require(_partner[i] != address(0), "Address cannot be zero");
+
+            partners.push(_partner[i]);
+            percentages.push(_percentages[i]);
+            totalPercentage += _percentages[i];
+        }
+        require(
+            totalPercentage == 100,
+            "Total percentage should add upto 100%"
+        );
     }
 
     // internal functions
@@ -181,9 +215,12 @@ contract simpleNFTSplit is ERC721Enumerable, Ownable {
 
     function withdraw() external payable onlyOwner {
         require(address(this).balance > 0, "Balance of this Contract is Zero");
-        (bool transfer, ) = payable(owner()).call{value: address(this).balance}(
-            ""
-        );
-        require(transfer, "Withdraw unsuccessfull");
+        uint256 currentBalance = address(this).balance;
+        for (uint256 i = 0; i < partners.length; i++) {
+            (bool transfer, ) = payable(partners[i]).call{
+                value: (currentBalance * percentages[i]) / 100
+            }("");
+            require(transfer, "Withdraw unsuccessfull");
+        }
     }
 }

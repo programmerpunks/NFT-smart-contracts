@@ -21,6 +21,8 @@ describe("Simple NFT with Reveal functionality", function () {
       account5,
       account6,
       account7,
+      account8,
+      account9,
     ] = await ethers.getSigners();
 
     const SimpleNFT = await ethers.getContractFactory("simpleNFTSplit");
@@ -28,7 +30,15 @@ describe("Simple NFT with Reveal functionality", function () {
       "Test",
       "test",
       "ipfs://URI/",
-      "ipfs://notRevealedUri/"
+      "ipfs://notRevealedUri/",
+      [
+        account1.address.toString(),
+        account2.address.toString(),
+        account3.address.toString(),
+        account4.address.toString(),
+        account5.address.toString(),
+      ],
+      [20, 20, 20, 20, 20]
     );
 
     await simpleNFT.setMintState(true);
@@ -46,16 +56,152 @@ describe("Simple NFT with Reveal functionality", function () {
     };
   }
 
-  describe("Deployment", function () {
-    it("Should set the right owner of Contract", async function () {
-      const { simpleNFT, owner } = await loadFixture(deployContract);
+  describe("Constructor", () => {
+    async function deployContract1() {
+      // Contracts are deployed using the first signer/account by default
+      const [owner, account1, account2, account3, account4, account5] =
+        await ethers.getSigners();
 
-      expect(await simpleNFT.owner()).to.equal(owner.address);
+      const SimpleNFT = await ethers.getContractFactory("simpleNFTSplit");
+      const simpleNFT = await SimpleNFT.deploy(
+        "Test",
+        "test",
+        "ipfs://URI/",
+        "ipfs://notRevealedUri/",
+        [
+          account1.address.toString(),
+          account2.address.toString(),
+          account3.address.toString(),
+          account4.address.toString(),
+          account5.address.toString(),
+        ],
+        [20, 20, 20, 20, 19]
+      );
+    }
+    async function deployContract2() {
+      // Contracts are deployed using the first signer/account by default
+      const [owner, account1, account2, account3, account4, account5] =
+        await ethers.getSigners();
+
+      // const { constants, expectRevert } = require("@openzeppelin/test-helpers");
+      const SimpleNFT = await ethers.getContractFactory("simpleNFTSplit");
+      const simpleNFT = await SimpleNFT.deploy(
+        "Test",
+        "test",
+        "ipfs://URI/",
+        "ipfs://notRevealedUri/",
+        [
+          account1.address.toString(),
+          account2.address.toString(),
+          ethers.constants.AddressZero,
+          account4.address.toString(),
+          account5.address.toString(),
+        ],
+        [20, 20, 20, 20, 20]
+      );
+    }
+
+    async function deployContract3() {
+      // Contracts are deployed using the first signer/account by default
+      const [owner, account1, account2, account3, account4, account5] =
+        await ethers.getSigners();
+
+      // const { constants, expectRevert } = require("@openzeppelin/test-helpers");
+      const SimpleNFT = await ethers.getContractFactory("simpleNFTSplit");
+      const simpleNFT = await SimpleNFT.deploy(
+        "Test",
+        "test",
+        "ipfs://URI/",
+        "ipfs://notRevealedUri/",
+        [
+          account1.address.toString(),
+          account2.address.toString(),
+          account3.address.toString(),
+          account4.address.toString(),
+          account5.address.toString(),
+        ],
+        [20, 20, 20, 0, 20]
+      );
+    }
+
+    async function deployContract4() {
+      // Contracts are deployed using the first signer/account by default
+      const [owner, account1, account2, account3, account4, account5] =
+        await ethers.getSigners();
+
+      // const { constants, expectRevert } = require("@openzeppelin/test-helpers");
+      const SimpleNFT = await ethers.getContractFactory("simpleNFTSplit");
+      const simpleNFT = await SimpleNFT.deploy(
+        "Test",
+        "test",
+        "ipfs://URI/",
+        "ipfs://notRevealedUri/",
+        [
+          account1.address.toString(),
+          account2.address.toString(),
+          account3.address.toString(),
+          account4.address.toString(),
+          account5.address.toString(),
+        ],
+        [20, 20, 20, 0]
+      );
+    }
+    async function deployContract5() {
+      // Contracts are deployed using the first signer/account by default
+      const [owner, account1, account2, account3, account4, account5] =
+        await ethers.getSigners();
+
+      // const { constants, expectRevert } = require("@openzeppelin/test-helpers");
+      const SimpleNFT = await ethers.getContractFactory("simpleNFTSplit");
+      const simpleNFT = await SimpleNFT.deploy(
+        "Test",
+        "test",
+        "ipfs://URI/",
+        "ipfs://notRevealedUri/",
+        [
+          account1.address.toString(),
+          account2.address.toString(),
+          account3.address.toString(),
+          account4.address.toString(),
+        ],
+        [20, 20, 20, 0]
+      );
+    }
+    it("Should Revert when Total percentage don't add upto 100%", async function () {
+      await expect(loadFixture(deployContract1)).to.be.revertedWith(
+        "Total percentage should add upto 100%"
+      );
     });
+    it("Should Revert when Address cannot  be zero", async function () {
+      await expect(loadFixture(deployContract2)).to.be.revertedWith(
+        "Address cannot be zero"
+      );
+    });
+    it("Should Revert when percentage cannot be zero for each partner", async function () {
+      await expect(loadFixture(deployContract3)).to.be.revertedWith(
+        "percentage cannot be zero for each partner"
+      );
+    });
+    it("Should Revert when percentage cannot be zero for each partner", async function () {
+      await expect(loadFixture(deployContract4)).to.be.revertedWith(
+        "Accounts and percentages length mismatch"
+      );
+    });
+    it("Should Revert when percentage cannot be zero for each partner", async function () {
+      await expect(loadFixture(deployContract5)).to.be.revertedWith(
+        "partner must be at least 5"
+      );
+    });
+  });
+  describe("Deployment", function () {
+    // it("Should Revert when Total percentage don't add upto 100%", async function () {
+    //   await expect(loadFixture(deployContract)).to.be.revertedWith(
+    //     "Total percentage should add upto 100%"
+    //   );
+    // });
 
     it("Should have totalSupply equal to zero", async function () {
       const { simpleNFT, owner } = await loadFixture(deployContract);
-
       expect(await simpleNFT.totalSupply()).to.equal(0);
     });
   });
@@ -249,7 +395,7 @@ describe("Simple NFT with Reveal functionality", function () {
     });
 
     describe("Transfer", function () {
-      it("Should revert with the if Balance of contract is not widhdrawn", async function () {
+      it("Should revert with the if Balance of contract is not widhdrawn 1", async function () {
         const { simpleNFT, owner, account1, account2, account3 } =
           await loadFixture(deployContract);
 
@@ -286,6 +432,50 @@ describe("Simple NFT with Reveal functionality", function () {
           BigInt(await ethers.provider.getBalance(simpleNFT.address))
         ).to.equal(BigInt(0));
       });
+      it("Should revert with the if Balance of contract is not widhdrawn", async function () {
+        const {
+          simpleNFT,
+          owner,
+          account1,
+          account2,
+          account3,
+          account4,
+          account5,
+          account6,
+          account7,
+          account8,
+          account9,
+        } = await loadFixture(deployContract);
+
+        const balanceOfaccount1before = BigInt(
+          await ethers.provider.getBalance(account1.address)
+        );
+        console.log("balanceOfaccount1before", balanceOfaccount1before);
+
+        await simpleNFT.connect(account6).mint(3, {
+          value: ethers.utils.parseEther("0.03"),
+        });
+        await simpleNFT.connect(account7).mint(3, {
+          value: ethers.utils.parseEther("0.03"),
+        });
+        await simpleNFT.connect(account4).mint(3, {
+          value: ethers.utils.parseEther("0.03"),
+        });
+        await simpleNFT.connect(account3).mint(1, {
+          value: ethers.utils.parseEther("0.01"),
+        });
+
+        await simpleNFT.connect(owner).withdraw();
+        const balanceOfaccount1After = BigInt(
+          await ethers.provider.getBalance(account1.address)
+        );
+        console.log("balanceOfaccount1After", balanceOfaccount1After);
+
+        expect(
+          balanceOfaccount1before +
+            BigInt(0.2 * ethers.utils.parseEther("0.10"))
+        ).to.equal(balanceOfaccount1After);
+      });
     });
   });
 
@@ -300,22 +490,6 @@ describe("Simple NFT with Reveal functionality", function () {
           simpleNFT.connect(account1).tokenURI(1)
         ).to.be.revertedWith("ERC721Metadata: URI query for nonexistent token");
       });
-      // it("Should revert with the URI is not Correct", async function () {
-      //   const { simpleNFT, owner, account1, account2, account3 } =
-      //     await loadFixture(deployContract);
-      //   await simpleNFT.connect(owner).mint(3, {
-      //     value: ethers.utils.parseEther("0.03"),
-      //   });
-      //   const tokenurii = await simpleNFT.tokenURI(1);
-      //   console.log("tokenurii", tokenurii);
-
-      //   expect(await simpleNFT.tokenURI(1)).to.equal("ipfs://notRevealedUri/");
-
-      //   await simpleNFT.reveal();
-      //   expect(await simpleNFT.tokenURI(1)).to.equal("ipfs://URI/1.json");
-      //   expect(await simpleNFT.tokenURI(2)).to.equal("ipfs://URI/2.json");
-      // });
-      // TODO: OWNER SET Owner & set BaseURi
 
       it("Should revert when non onwer tries to reveal", async function () {
         const { simpleNFT, owner, account1, account2, account3 } =
