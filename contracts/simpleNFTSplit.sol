@@ -29,8 +29,6 @@ contract simpleNFTSplit is ERC721Enumerable, Ownable {
     bool public revealed = false;
     string public notRevealedUri;
 
-    // Partner to Percentage
-    // mapping(address => uint256) partner;
     uint256[] percentages;
     address[] partners;
 
@@ -51,12 +49,7 @@ contract simpleNFTSplit is ERC721Enumerable, Ownable {
         require(_partner.length >= 5, "partner must be at least 5");
         uint256 totalPercentage = 0;
 
-        //  (_partner.length);
-        // (_percentages.length);
-
         for (uint256 i = 0; i < _partner.length; i++) {
-            // assert(_percentages[i] > 0);
-            // assert(_partner[i] != address(0));
             require(
                 _percentages[i] > 0,
                 "percentage cannot be zero for each partner"
