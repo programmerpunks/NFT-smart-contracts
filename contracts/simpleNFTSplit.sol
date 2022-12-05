@@ -4,8 +4,9 @@
     2. And a wallet can have only 3 nfts
     3. And in one transaction they can mint 3 nfts
     4. And these should be dynamic, owner can change after that
-    5. And owner can mint 10 nfts as guest for its team members
-    6. And when a
+    5. And owner can mint 10 nfts as gift for its team members
+    6. And percenatages are set by owner at the start for 5 different wallet
+       and transfered to these wallets by owner according to their percentages
 */
 
 // SPDX-License-Identifier: MIT
