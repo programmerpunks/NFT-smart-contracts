@@ -1,5 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomiclabs/hardhat-etherscan");
+require("hardhat-gas-reporter");
 /** @type import('hardhat/config').HardhatUserConfig */
 // require("@openzeppelin/hardhat-upgrades");
 
