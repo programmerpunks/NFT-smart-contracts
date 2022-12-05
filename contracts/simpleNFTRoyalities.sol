@@ -32,6 +32,9 @@ contract simpleNFTRoyalities is ERC721Enumerable, Ownable {
     // Partner to Percentage
     uint256[] percentages;
     address[] partners;
+    // Initial Mint Address
+    mapping(uint256 => address) initialMintAddress;
+    uint256 royalityPercentage = 2;
 
     constructor(
         string memory name_,
@@ -99,6 +102,7 @@ contract simpleNFTRoyalities is ERC721Enumerable, Ownable {
         require(msg.value >= cost * _mintAmount, "Cost Error");
         for (uint256 i = 1; i <= _mintAmount; i++) {
             _mint(msg.sender, supply + i);
+            initialMintAddress[supply + i] = msg.sender;
         }
     }
 
@@ -129,6 +133,7 @@ contract simpleNFTRoyalities is ERC721Enumerable, Ownable {
         for (uint256 i = 1; i <= _mintAmount; i++) {
             _mint(receiver, supply + i);
             teamSupply--;
+            initialMintAddress[supply + i] = receiver;
         }
     }
 
@@ -221,5 +226,30 @@ contract simpleNFTRoyalities is ERC721Enumerable, Ownable {
             }("");
             require(transfer, "Withdraw unsuccessfull");
         }
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 firstTokenId,
+        uint256 batchSize
+    ) internal override {
+        super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
+        address firstOwner = initialMintAddress[firstTokenId];
+
+        if (from != address(0) && firstOwner != from) {
+            (bool transfer, ) = payable(firstOwner).call{
+                value: (msg.value * royalityPercentage) / 100
+            }("");
+            require(transfer, "Withdraw unsuccessfull");
+        }
+    }
+
+    function initialMinter(uint256 tokenId)
+        public
+        view
+        returns (address firstOwner)
+    {
+        return initialMintAddress[tokenId];
     }
 }
