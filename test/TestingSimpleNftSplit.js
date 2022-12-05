@@ -461,9 +461,16 @@ describe("Simple NFT with Reveal functionality", function () {
         await simpleNFT.connect(account4).mint(3, {
           value: ethers.utils.parseEther("0.03"),
         });
-        await simpleNFT.connect(account3).mint(1, {
+        await simpleNFT.connect(account5).mint(1, {
           value: ethers.utils.parseEther("0.01"),
         });
+
+        const balanceOfaccount4before = BigInt(
+          await ethers.provider.getBalance(account4.address)
+        );
+        const balanceOfaccount5before = BigInt(
+          await ethers.provider.getBalance(account5.address)
+        );
 
         await simpleNFT.connect(owner).withdraw();
         const balanceOfaccount1After = BigInt(
@@ -475,6 +482,26 @@ describe("Simple NFT with Reveal functionality", function () {
           balanceOfaccount1before +
             BigInt(0.2 * ethers.utils.parseEther("0.10"))
         ).to.equal(balanceOfaccount1After);
+
+        expect(
+          balanceOfaccount1before +
+            BigInt(0.2 * ethers.utils.parseEther("0.10"))
+        ).to.equal(await ethers.provider.getBalance(account2.address));
+
+        expect(
+          balanceOfaccount1before +
+            BigInt(0.2 * ethers.utils.parseEther("0.10"))
+        ).to.equal(await ethers.provider.getBalance(account3.address));
+
+        expect(
+          balanceOfaccount4before +
+            BigInt(0.2 * ethers.utils.parseEther("0.10"))
+        ).to.equal(await ethers.provider.getBalance(account4.address));
+
+        expect(
+          balanceOfaccount5before +
+            BigInt(0.2 * ethers.utils.parseEther("0.10"))
+        ).to.equal(await ethers.provider.getBalance(account5.address));
       });
     });
   });

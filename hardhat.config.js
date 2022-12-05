@@ -1,5 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomiclabs/hardhat-etherscan");
+require("hardhat-gas-reporter");
 /** @type import('hardhat/config').HardhatUserConfig */
 // require("@openzeppelin/hardhat-upgrades");
 
@@ -21,5 +22,9 @@ module.exports = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
+  },
+  gasReporter: {
+    enabled: true,
+    currency: "ETH",
   },
 };
