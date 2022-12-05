@@ -4,8 +4,6 @@
     2. And a wallet can have only 3 nfts
     3. And in one transaction they can mint 3 nfts
     4. And these should be dynamic, owner can change after that
-    5. And owner can mint 10 nfts as guest for its team members
-    6. And onwer can hide TokenUri from a user and reveal later
 */
 
 // SPDX-License-Identifier: MIT
@@ -14,29 +12,24 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract simpleNFTReveal is ERC721Enumerable, Ownable {
+contract simpleNFT is ERC721Enumerable, Ownable {
     using Strings for uint256;
 
     string baseURI;
     string public baseExtension = ".json";
 
     uint256 public maxMintAmount = 3;
-    uint256 public maxSupply = 20; //total
+    uint256 public maxSupply = 10; //total Mintables Supply
     uint256 public cost = 0.01 ether;
-    uint256 public teamSupply = 10;
 
     bool public mintState = false;
-    bool public revealed = false;
-    string public notRevealedUri;
 
     constructor(
         string memory name_,
         string memory symbol_,
-        string memory _initBaseURI,
-        string memory _initNotRevealedUri
+        string memory _initBaseURI
     ) ERC721(name_, symbol_) {
         baseURI = _initBaseURI;
-        notRevealedUri = _initNotRevealedUri;
     }
 
     // internal functions
@@ -59,7 +52,7 @@ contract simpleNFTReveal is ERC721Enumerable, Ownable {
             "You cannot mint more than max NFTs"
         );
         require(
-            supply + _mintAmount + teamSupply <= maxSupply,
+            supply + _mintAmount <= maxSupply,
             "Cannot mint more than max Supply"
         );
 
@@ -68,38 +61,6 @@ contract simpleNFTReveal is ERC721Enumerable, Ownable {
             _mint(msg.sender, supply + i);
         }
     }
-
-    function gift(uint256 _mintAmount, address receiver)
-        external
-        payable
-        onlyOwner
-    {
-        uint256 supply = totalSupply();
-        require(mintState, "Minting is paused");
-        require(teamSupply > 0, "All Gift are dispatched");
-        require(_mintAmount <= teamSupply, "Cannot mint this amount as gift");
-        require(_mintAmount > 0, "Mint amount Cannot be zero");
-        require(
-            _mintAmount <= maxMintAmount,
-            "Cannot mint more than max mint amount"
-        );
-        require(
-            balanceOf(receiver) + _mintAmount <= maxMintAmount,
-            "You cannot mint more than max NFTs for this wallet"
-        );
-        require(
-            supply + _mintAmount <= maxSupply,
-            "Cannot mint more than max Supply"
-        );
-
-        require(msg.value >= cost * _mintAmount, "Cost Error");
-        for (uint256 i = 1; i <= _mintAmount; i++) {
-            _mint(receiver, supply + i);
-            teamSupply--;
-        }
-    }
-
-    // public functions
 
     function tokenURI(uint256 tokenId)
         public
@@ -112,11 +73,6 @@ contract simpleNFTReveal is ERC721Enumerable, Ownable {
             _exists(tokenId),
             "ERC721Metadata: URI query for nonexistent token"
         );
-        if (revealed == false) {
-            return notRevealedUri;
-        }
-
-        // Only Owner Functions
         string memory currentBaseURI = _baseURI();
         return
             bytes(currentBaseURI).length > 0
@@ -144,18 +100,6 @@ contract simpleNFTReveal is ERC721Enumerable, Ownable {
     }
 
     //only owner
-
-    function reveal() external onlyOwner {
-        revealed = true;
-    }
-
-    function setNotRevealedURI(string memory _notRevealedURI)
-        external
-        onlyOwner
-    {
-        notRevealedUri = _notRevealedURI;
-    }
-
     function setCost(uint256 _newCost) external onlyOwner {
         cost = _newCost;
     }
