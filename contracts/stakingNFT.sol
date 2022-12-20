@@ -11,10 +11,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/interfaces/IERC721Receiver.sol";
+
 pragma solidity ^0.8.17;
 
 // import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-contract StakingNFTs is Ownable, ReentrancyGuard {
+contract StakingNFTs is Ownable, ReentrancyGuard, IERC721Receiver {
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
     /* -------------------------------------------------------------------------- */
@@ -39,7 +41,7 @@ contract StakingNFTs is Ownable, ReentrancyGuard {
 
     // Reward Tokens are cumulated every day.
     uint256 rewardPerToken = 10 ether;
-
+    uint256 public totalStaked = 0;
     // Structure to Store Information Related to a User Staking Their thier NFT
     struct StakeInfo {
         // uint256 tokenID;
@@ -65,9 +67,10 @@ contract StakingNFTs is Ownable, ReentrancyGuard {
         rewardTokens = _rewardsTokens;
     }
 
-    function StakeTokens(uint256 _tokenId) external returns (bool) {
+    function stakeTokens(uint256 _tokenId) external returns (bool) {
         require(
-            nftCollection.ownerOf(_tokenId) == msg.sender,
+            (nftCollection.ownerOf(_tokenId) == msg.sender ||
+                stakeInfos[_tokenId].owner == msg.sender),
             "caller is not the owner of this NFT"
         );
         // startTime is set to current time when Token is staked
@@ -88,7 +91,7 @@ contract StakingNFTs is Ownable, ReentrancyGuard {
             claimedRewards: 0,
             owner: msg.sender
         });
-
+        totalStaked++;
         emit Staked(msg.sender, block.timestamp, _tokenId);
         return true;
     }
@@ -97,12 +100,12 @@ contract StakingNFTs is Ownable, ReentrancyGuard {
         external
         returns (bool isUnstaked)
     {
-        require(
-            stakeInfos[_tokenId].owner == msg.sender,
-            "caller has not the staked this NFT"
-        );
         StakeInfo memory tokenData = stakeInfos[_tokenId];
-        require(tokenData.startTime >= 0, "You have not staked this token");
+        // require(tokenData.startTime > 0, "This token is not Staked");
+        require(
+            tokenData.owner == msg.sender,
+            "caller is not the owner of this NFT or This token is not Staked"
+        );
 
         uint256 dayPassed = (block.timestamp - tokenData.startTime) / 86400;
 
@@ -119,74 +122,105 @@ contract StakingNFTs is Ownable, ReentrancyGuard {
         // Returning the nft from StakingToken back to its original owner
         nftCollection.safeTransferFrom(address(this), msg.sender, _tokenId);
         delete stakeInfos[_tokenId];
-
+        totalStaked--;
         emit UnStaked(msg.sender, block.timestamp, _tokenId);
         return true;
     }
 
-    function ClaimDailyRewards(uint256 _tokenId)
+    function claimDailyRewards(uint256 _tokenId)
         external
         returns (bool Claimed)
     {
-        require(
-            stakeInfos[_tokenId].owner == msg.sender,
-            "caller has not the staked this NFT"
-        );
-
         StakeInfo memory tokenData = stakeInfos[_tokenId];
-        require(tokenData.startTime >= 0, "You have not staked this token");
+        uint256 currentUnclaimedReward = unclaimedReward[_tokenId];
 
-        uint256 dayPassed = (block.timestamp - tokenData.startTime) / 86400;
-
-        // require(
-        //     dayPassed >= 7,
-        //     "At least 7 days should be passed to claim the reward"
-        // );
-        // require(
-        //             rewardTokens.balanceOf(address(this)) >= currentRewardCreated,
-        //             "Reward Tokens Not Available Right Now"
-        //         );
-        if (dayPassed >= 7) {
+        if (tokenData.owner == msg.sender) {
+            uint256 dayPassed = (block.timestamp - tokenData.startTime) / 86400;
+            require(
+                dayPassed >= 7,
+                "Day passed should be greater than 7 to claim the reward"
+            );
             uint256 currentRewardCreated = (dayPassed * rewardPerToken) -
                 // Subtract Already claimed Reward
                 tokenData.claimedRewards;
             stakeInfos[_tokenId].claimedRewards += currentRewardCreated;
+
             require(
-                rewardTokens.balanceOf(address(this)) >= currentRewardCreated,
+                rewardTokens.balanceOf(address(this)) >=
+                    currentRewardCreated + currentUnclaimedReward,
                 "Reward Tokens Not Available Right Now"
             );
+
             rewardTokens.transfer(
                 msg.sender,
                 currentRewardCreated +
                     // add unclaimed previous reward
-                    unclaimedReward[_tokenId]
+                    currentUnclaimedReward
             );
 
             emit ClaimedReward(
                 _tokenId,
                 msg.sender,
-                currentRewardCreated + unclaimedReward[_tokenId]
+                currentRewardCreated + currentUnclaimedReward
             );
             delete unclaimedReward[_tokenId];
+            // }
         } else {
             require(
-                unclaimedReward[_tokenId] > 0,
-                "No New Reward created or Unclaimed Reward is there to be claimed"
+                nftCollection.ownerOf(_tokenId) == msg.sender,
+                "caller has not the staked this NFT"
             );
-            rewardTokens.transfer(msg.sender, unclaimedReward[_tokenId]);
+            require(
+                currentUnclaimedReward > 0,
+                "No Unclaimed Reward is there to be claimed"
+            );
+            require(
+                rewardTokens.balanceOf(address(this)) >= currentUnclaimedReward,
+                "Reward Tokens Not Available Right Now"
+            );
+            rewardTokens.transfer(msg.sender, currentUnclaimedReward);
+            delete unclaimedReward[_tokenId];
         }
         return true;
     }
 
-    function earningInfo()
+    function earningInfo(uint256 _tokenId)
         public
         view
         returns (
-            uint256 StartTime,
-            uint256 tokenIdStaked,
+            uint256 startTime,
             uint256 amountClaimed,
-            uint256 RewardCreated,
-            uint256 dayPassed
+            uint256 rewardCreated,
+            uint256 dayPassed,
+            address tokenOwner
         )
-    {}
+    {
+        StakeInfo memory tokenData = stakeInfos[_tokenId];
+        uint256 currentUnclaimedReward = unclaimedReward[_tokenId];
+
+        startTime = tokenData.startTime;
+        tokenOwner = tokenData.owner;
+        amountClaimed = tokenData.claimedRewards;
+        if (tokenData.startTime > 0) {
+            dayPassed = (block.timestamp - tokenData.startTime) / 86400;
+        }
+
+        uint256 currentRewardCreated = (dayPassed * rewardPerToken) -
+            // Subtract Already claimed Reward
+            tokenData.claimedRewards;
+        rewardCreated = currentRewardCreated + currentUnclaimedReward;
+    }
+
+    function onERC721Received(
+        address,
+        address from,
+        uint256,
+        bytes calldata
+    ) external returns (bytes4) {
+        require(
+            from != address(0x0),
+            "Cannot send nfts to Staking contract directly"
+        );
+        return IERC721Receiver.onERC721Received.selector;
+    }
 }
