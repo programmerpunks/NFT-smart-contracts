@@ -36,3 +36,6 @@ describe("StakingNFT contract", function () {
     });
   });
 });
+
+// TODO: no rewarding tokenss.... and claim
+//
