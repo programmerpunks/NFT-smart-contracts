@@ -1,12 +1,12 @@
 // NFT Staking Contract
 // User can Stake ERC721 tokens and earn ERC20 tokens
 // Set reward Rate
-// Owner can increase rewardable tokens in contract
-// Use interfaces in your staking contract
+// Owner can change rewardable tokens in contract
 // User should be able to earn tokens for every 24 hours
 // but Rewards are set to 0 if unstaked before 7 days
-// SPDX-License-Identifier: MIT
+// reward can be claimed even when a user has unstaked but reward is transferred to current owner of NFT
 
+// SPDX-License-Identifier: MIT
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -222,5 +222,10 @@ contract StakingNFTs is Ownable, ReentrancyGuard, IERC721Receiver {
             "Cannot send nfts to Staking contract directly"
         );
         return IERC721Receiver.onERC721Received.selector;
+    }
+
+    function setRewardPerToken(uint256 amount) external onlyOwner {
+        require(rewardPerToken > 0, "Reward cannot be zero");
+        rewardPerToken = amount;
     }
 }
