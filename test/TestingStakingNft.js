@@ -462,6 +462,22 @@ describe("StakingNFT contract", function () {
       ).to.be.revertedWith("caller has not the staked this NFT");
     });
   });
+
+  describe("setRewardPerToken function", function () {
+    it("Validation", async function () {
+      const { stakingNFTs, simpleNFT, erc20Tokens, owner, account1 } =
+        await loadFixture(deployContract);
+      await expect(
+        stakingNFTs.connect(account1).setRewardPerToken(1)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+      await expect(stakingNFTs.setRewardPerToken(0)).to.be.revertedWith(
+        "Reward cannot be zero"
+      );
+
+      await stakingNFTs.setRewardPerToken(5);
+      expect(await stakingNFTs.rewardPerToken()).to.equal(5);
+    });
+  });
 });
 
 // TODO: no rewarding tokenss.... and claim

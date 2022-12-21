@@ -40,7 +40,7 @@ contract StakingNFTs is Ownable, ReentrancyGuard, IERC721Receiver {
     IERC721 public immutable nftCollection;
 
     // Reward Tokens are cumulated every day.
-    uint256 rewardPerToken = 10 ether;
+    uint256 public rewardPerToken = 10 ether;
     uint256 public totalStaked = 0;
     // Structure to Store Information Related to a User Staking Their thier NFT
     struct StakeInfo {
@@ -225,7 +225,7 @@ contract StakingNFTs is Ownable, ReentrancyGuard, IERC721Receiver {
     }
 
     function setRewardPerToken(uint256 amount) external onlyOwner {
-        require(rewardPerToken > 0, "Reward cannot be zero");
+        require(amount > 0, "Reward cannot be zero");
         rewardPerToken = amount;
     }
 }
