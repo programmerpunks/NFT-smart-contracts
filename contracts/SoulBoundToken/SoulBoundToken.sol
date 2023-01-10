@@ -1,9 +1,11 @@
+// edited _transfer function of ERC721.sol openzeppelins implementation & removed the check of Ownership
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./lib/ERC721.sol";
+import "./lib/ERC721URIStorage.sol";
+import "./lib/Ownable.sol";
 
 contract SoulBoundToken is ERC721, ERC721URIStorage, Ownable {
     event Attest(address indexed to, uint256 indexed tokenId);
@@ -83,8 +85,13 @@ contract SoulBoundToken is ERC721, ERC721URIStorage, Ownable {
     }
 
     // Calling recovery account to gets the token when approval required are met
-    function recoverSoulBound(uint256 tokenId) external onlyOwner {
-        uint256 id = validRecoveryAccounts(tokenId);
+    function recoverSoulBound(uint256 tokenId) external {
+        // uint256 id = validRecoveryAccounts(tokenId);
+        safeTransferFrom(
+            RecoveryApprovalData[tokenId].issuedTo,
+            msg.sender,
+            tokenId
+        );
     }
 
     // The following functions are overrides required by Solidity.
@@ -111,8 +118,37 @@ contract SoulBoundToken is ERC721, ERC721URIStorage, Ownable {
         uint256 firstTokenId,
         uint256 batchSize
     ) internal virtual override {
-        require(from == address(0) || to == address(0), "You cannot transfer");
-        super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
+        uint256 noOfApprovals = 0;
+        bool operatorApproved = false;
+        if (msg.sender == RecoveryApprovalData[firstTokenId].issuedTo) {
+            require(
+                from == address(0) || to == address(0),
+                "You cannot transfer SBT"
+            );
+            super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
+        } else {
+            for (uint256 i = 0; i < noOfApprovalRequired; ++i) {
+                if (
+                    RecoveryApprovalData[firstTokenId].Operators[i].approvals ==
+                    true
+                ) {
+                    noOfApprovals += 1;
+                }
+                if (
+                    RecoveryApprovalData[firstTokenId].Operators[i].operator ==
+                    msg.sender
+                ) {
+                    operatorApproved == true;
+                }
+            }
+            if (
+                RecoveryApprovalData[firstTokenId].ownerApproval == true &&
+                noOfApprovalRequired == noOfApprovals
+            ) {
+                super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
+            }
+        }
+        revert("You are not allowed to transfer SBT");
     }
 
     function _afterTokenTransfer(
